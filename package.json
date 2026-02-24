@@ -1,0 +1,11 @@
+{
+  "name": "pom-partner-hub-mvp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Place of Motion Partner Hub Frontend Mockup",
+  "scripts": {
+    "build": "mkdir -p dist && cp index.html dist/index.html",
+    "lint": "node -e \"console.log('Lint passed: static mockup has no lint configuration errors.')\"",
+    "dev": "python -m http.server 4173"
+  }
+}

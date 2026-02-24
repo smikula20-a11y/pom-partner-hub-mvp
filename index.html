@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Place of Motion – Partner Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              pomGreen: '#3FB34F',
+              pomPink: '#ED145B',
+            },
+            boxShadow: {
+              card: '0 10px 24px rgba(15, 23, 42, 0.08)',
+            },
+          },
+        },
+      }
+    </script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useMemo, useState } = React
+
+      const NAV = ['Dashboard Home', 'Bibliothek', 'Templates', 'Marketing-Material', 'Provisionen', 'Support']
+      const FILTERS = ['Rücken', 'Nacken', 'Knie', 'Hüfte', 'Schulter', 'Edukation']
+
+      const COURSES = [
+        { title: 'Rückenfit Starter', category: 'Rücken', level: 'Basis', sessions: 12 },
+        { title: 'Nacken Mobilität Pro', category: 'Nacken', level: 'Fortgeschritten', sessions: 8 },
+        { title: 'Knie-Reha Kompakt', category: 'Knie', level: 'Basis', sessions: 10 },
+        { title: 'Hüft-Flow Alltag', category: 'Hüfte', level: 'Basis', sessions: 6 },
+        { title: 'Schulter Stabil Plus', category: 'Schulter', level: 'Fortgeschritten', sessions: 9 },
+        { title: 'Patienten-Edukation Essentials', category: 'Edukation', level: 'Basis', sessions: 5 },
+      ]
+
+      const TEMPLATES = [
+        { title: '8-Wochen Reha-Plan', type: 'Trainingsplan', state: 'Freigegeben', lastEdit: 'Heute' },
+        { title: 'Anamnesebogen Praxis', type: 'Intake', state: 'In Bearbeitung', lastEdit: 'vor 1 Woche' },
+        { title: 'Post-OP Progression', type: 'Protokoll', state: 'Neu', lastEdit: 'vor 2 Tagen' },
+      ]
+
+      const MATERIALS = [
+        { title: 'Instagram Story Set', format: '1080x1920', channel: 'Social' },
+        { title: 'Flyer A5 Physiotherapie', format: 'Print + PDF', channel: 'Praxis' },
+        { title: 'Newsletter Vorlage', format: 'E-Mail', channel: 'CRM' },
+      ]
+
+      const metrics = [
+        { label: 'Aktive Patientenprogramme', value: '124' },
+        { label: 'Neue Kursfreigaben', value: '9' },
+        { label: 'Offene Support-Anfragen', value: '3' },
+      ]
+
+      function HeaderActions() {
+        return (
+          <div className="flex flex-wrap gap-3">
+            <button className="rounded-lg bg-pomPink px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600">Template anfragen</button>
+            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Support kontaktieren</button>
+          </div>
+        )
+      }
+
+      function Card({ children, className = '' }) {
+        return <section className={`rounded-2xl bg-white p-5 shadow-card ${className}`}>{children}</section>
+      }
+
+      function Library({ query, setQuery, activeChip, setActiveChip }) {
+        const filtered = useMemo(() => COURSES.filter((c) => {
+          const byChip = activeChip === 'Alle' || c.category === activeChip
+          const byQuery = c.title.toLowerCase().includes(query.toLowerCase())
+          return byChip && byQuery
+        }), [query, activeChip])
+
+        return (
+          <Card>
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <h3 className="text-lg font-semibold">Bibliothek</h3>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Kurse suchen..."
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-pomGreen focus:outline-none md:max-w-xs"
+              />
+            </div>
+            <div className="mb-5 flex flex-wrap gap-2">
+              {['Alle', ...FILTERS].map((chip) => (
+                <button
+                  key={chip}
+                  onClick={() => setActiveChip(chip)}
+                  className={`rounded-full px-3 py-1 text-sm ${activeChip === chip ? 'bg-pomGreen text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {filtered.map((course) => (
+                <article key={course.title} className="rounded-xl border border-slate-100 p-4">
+                  <p className="text-xs font-semibold uppercase text-pomGreen">{course.category}</p>
+                  <h4 className="mt-1 font-semibold">{course.title}</h4>
+                  <p className="mt-1 text-sm text-slate-500">{course.level} · {course.sessions} Sessions</p>
+                  <button className="mt-3 text-sm font-semibold text-pomPink">Zum Kurs</button>
+                </article>
+              ))}
+            </div>
+          </Card>
+        )
+      }
+
+      function TemplatesPage() {
+        return (
+          <Card>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Templates</h3>
+              <span className="rounded bg-pomGreen/10 px-2 py-1 text-xs font-semibold text-pomGreen">Neu</span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {TEMPLATES.map((t) => (
+                <article key={t.title} className="rounded-xl border border-slate-100 p-4">
+                  <h4 className="font-semibold">{t.title}</h4>
+                  <p className="text-sm text-slate-500">{t.type}</p>
+                  <p className="mt-2 text-xs text-slate-500">Status: {t.state}</p>
+                  <p className="text-xs text-slate-400">Aktualisiert: {t.lastEdit}</p>
+                </article>
+              ))}
+            </div>
+          </Card>
+        )
+      }
+
+      function MarketingPage() {
+        return (
+          <Card>
+            <h3 className="text-lg font-semibold">Marketing-Material</h3>
+            <p className="mb-4 mt-1 text-sm text-slate-500">Assets für Website, Social Media und Praxis-Print.</p>
+            <div className="space-y-3">
+              {MATERIALS.map((item) => (
+                <div key={item.title} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 p-3">
+                  <div>
+                    <p className="font-medium">{item.title}</p>
+                    <p className="text-xs text-slate-500">Kanal: {item.channel}</p>
+                  </div>
+                  <span className="text-sm text-slate-500">{item.format}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )
+      }
+
+      function CommissionsPage() {
+        return (
+          <Card>
+            <h3 className="text-lg font-semibold">Provisionen</h3>
+            <p className="mt-1 text-sm text-slate-500">UI-Platzhalter: Hier erscheinen später Partnerprovisionen, Auszahlungsstatus und Berichte.</p>
+            <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400">Provisionsmodul folgt in Phase 2</div>
+          </Card>
+        )
+      }
+
+      function SupportPage() {
+        return (
+          <Card>
+            <h3 className="text-lg font-semibold">Support</h3>
+            <p className="mt-1 text-sm text-slate-500">Direkter Draht zum Place of Motion Partner-Support Team.</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button className="rounded-lg bg-pomGreen px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600">Ticket erstellen</button>
+              <button className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Support kontaktieren</button>
+            </div>
+          </Card>
+        )
+      }
+
+      function HomePage(props) {
+        return (
+          <div className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-3">
+              {metrics.map((m) => (
+                <Card key={m.label} className="p-4">
+                  <p className="text-sm text-slate-500">{m.label}</p>
+                  <p className="mt-2 text-2xl font-bold text-pomGreen">{m.value}</p>
+                </Card>
+              ))}
+            </div>
+            <Library {...props} />
+            <div className="grid gap-5 md:grid-cols-2">
+              <TemplatesPage />
+              <MarketingPage />
+            </div>
+          </div>
+        )
+      }
+
+      function App() {
+        const [active, setActive] = useState('Dashboard Home')
+        const [query, setQuery] = useState('')
+        const [activeChip, setActiveChip] = useState('Alle')
+
+        const pageMap = {
+          'Dashboard Home': <HomePage query={query} setQuery={setQuery} activeChip={activeChip} setActiveChip={setActiveChip} />,
+          'Bibliothek': <Library query={query} setQuery={setQuery} activeChip={activeChip} setActiveChip={setActiveChip} />,
+          'Templates': <TemplatesPage />,
+          'Marketing-Material': <MarketingPage />,
+          'Provisionen': <CommissionsPage />,
+          'Support': <SupportPage />,
+        }
+
+        return (
+          <div className="min-h-screen bg-slate-50">
+            <div className="mx-auto flex max-w-7xl flex-col lg:flex-row">
+              <aside className="border-b border-slate-200 bg-white lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
+                <div className="p-6">
+                  <div className="rounded-xl bg-gradient-to-r from-pomGreen to-emerald-600 p-4 text-white">
+                    <p className="text-xs uppercase tracking-[0.2em] text-emerald-100">Place of Motion</p>
+                    <h1 className="mt-2 text-xl font-bold">Partner Hub</h1>
+                    <p className="mt-1 text-sm text-emerald-50">Physiotherapie Dashboard</p>
+                  </div>
+                  <nav className="mt-6 grid grid-cols-2 gap-2 lg:grid-cols-1">
+                    {NAV.map((item) => (
+                      <button
+                        key={item}
+                        onClick={() => setActive(item)}
+                        className={`rounded-lg px-3 py-2 text-left text-sm transition ${active === item ? 'bg-pomGreen/10 font-semibold text-pomGreen' : 'text-slate-600 hover:bg-slate-100'}`}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </nav>
+                </div>
+              </aside>
+
+              <main className="flex-1 p-4 md:p-8">
+                <header className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Willkommen zurück, Praxis Team</p>
+                    <h2 className="text-2xl font-bold">{active}</h2>
+                  </div>
+                  <HeaderActions />
+                </header>
+
+                {pageMap[active]}
+              </main>
+            </div>
+          </div>
+        )
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+    </script>
+  </body>
+</html>
