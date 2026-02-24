@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Place of Motion – Partner Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              pomGreen: '#3FB34F',
+              pomPink: '#ED145B',
+            },
+            boxShadow: {
+              card: '0 10px 24px rgba(15, 23, 42, 0.08)',
+            },
+          },
+        },
+      }
+    </script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useEffect, useMemo, useState } = React
+
+      const NAV = [
+        'Dashboard Home',
+        'Bibliothek',
+        'Kurs-Konfigurator',
+        'Templates',
+        'Marketing-Material',
+        'Provisionen',
+        'Support',
+      ]
+      const FILTERS = ['Rücken', 'Nacken', 'Knie', 'Hüfte', 'Schulter', 'Edukation', 'Geräte']
+      const STORAGE_KEY = 'pom-partner-configurator-draft-v1'
+
+      const COURSES = [
+        { title: 'Rückenfit Starter', category: 'Rücken', level: 'Basis', sessions: 12 },
+        { title: 'Nacken Mobilität Pro', category: 'Nacken', level: 'Fortgeschritten', sessions: 8 },
+        { title: 'Knie-Reha Kompakt', category: 'Knie', level: 'Basis', sessions: 10 },
+        { title: 'Hüft-Flow Alltag', category: 'Hüfte', level: 'Basis', sessions: 6 },
+        { title: 'Schulter Stabil Plus', category: 'Schulter', level: 'Fortgeschritten', sessions: 9 },
+        { title: 'Patienten-Edukation Essentials', category: 'Edukation', level: 'Basis', sessions: 5 },
+      ]
+
+      const MASTER_LIBRARY = [
+        { id: 'a1', title: 'Brücke mit Atemfokus', category: 'Rücken', type: 'video', duration: '06:20', difficulty: 'Einsteiger', tags: ['Rumpf', 'Stabilität'], defaultDescription: 'Aktiviert Gesäß- und Rumpfmuskulatur mit ruhigem Atemrhythmus.' },
+        { id: 'a2', title: 'Nacken Entspannung Daily', category: 'Nacken', type: 'video', duration: '04:10', difficulty: 'Einsteiger', tags: ['Mobilität', 'Alltag'], defaultDescription: 'Kurze Sequenz für weniger Spannung im Schulter-Nacken-Bereich.' },
+        { id: 'a3', title: 'Knie Achsenkontrolle Basics', category: 'Knie', type: 'video', duration: '08:00', difficulty: 'Mittel', tags: ['Knie', 'Koordination'], defaultDescription: 'Verbessert saubere Beinachse bei kontrollierten Bewegungen.' },
+        { id: 'a4', title: 'Hüftmobilität Flow', category: 'Hüfte', type: 'video', duration: '07:15', difficulty: 'Mittel', tags: ['Hüfte', 'Beweglichkeit'], defaultDescription: 'Dynamische Bewegungsabfolge zur Mobilisierung der Hüfte.' },
+        { id: 'a5', title: 'Schulterblatt Kontrolle', category: 'Schulter', type: 'video', duration: '05:40', difficulty: 'Mittel', tags: ['Schulter', 'Stabilität'], defaultDescription: 'Gezielte Übung für Scapula-Kontrolle und Haltung.' },
+        { id: 'a6', title: 'Reha Grundlagen Leitfaden', category: 'Edukation', type: 'pdf', duration: '', difficulty: 'Einsteiger', tags: ['Wissen', 'Patienteninfo'], defaultDescription: 'PDF mit Grundlagen zur sicheren Trainingssteuerung.' },
+        { id: 'a7', title: 'Miniband Übungen Unterkörper', category: 'Geräte', type: 'video', duration: '09:20', difficulty: 'Fortgeschritten', tags: ['Miniband', 'Kraft'], defaultDescription: 'Gerätegestützte Unterkörperserie mit Miniband.' },
+        { id: 'a8', title: 'Dosierung in der Praxis', category: 'Edukation', type: 'pdf', duration: '', difficulty: 'Mittel', tags: ['Dosierung', 'Therapieplan'], defaultDescription: 'PDF zur Progression und Belastungssteuerung.' },
+      ]
+
+      const TEMPLATES = [
+        {
+          id: 'tpl-ruecken-7',
+          name: 'Rückenfit 7 Tage',
+          draft: {
+            courseTitle: 'Rückenfit 7 Tage',
+            focus: 'Büroalltag / unterer Rücken',
+            notes: 'Alltagsnahes Einsteigerprogramm.',
+            modules: [
+              {
+                id: 'm1',
+                title: 'Woche 1 – Aktivierung',
+                lessons: [
+                  { id: 'l1', assetId: 'a1', lessonTitle: 'Brücke mit Atemfokus', lessonDescription: 'Ruhige Aktivierung für den Start.', dosageToday: '2x 8 Wdh', cues: 'Rippen tief, Nacken lang.', optionalFlag: false },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          id: 'tpl-nacken',
+          name: 'Nacken Basics',
+          draft: {
+            courseTitle: 'Nacken Basics',
+            focus: 'Spannungsreduktion im Alltag',
+            notes: 'Kurze Sessions, hohe Regelmäßigkeit.',
+            modules: [
+              {
+                id: 'm1',
+                title: 'Mobilität & Entspannung',
+                lessons: [
+                  { id: 'l1', assetId: 'a2', lessonTitle: 'Nacken Entspannung Daily', lessonDescription: 'Sanfte Mobilität bei Verspannung.', dosageToday: '1x täglich', cues: 'Atmung ruhig halten.', optionalFlag: false },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          id: 'tpl-knie',
+          name: 'Knie Einstieg',
+          draft: {
+            courseTitle: 'Knie Einstieg',
+            focus: 'Aufbau nach Pause / Reha light',
+            notes: 'Qualität vor Intensität.',
+            modules: [
+              {
+                id: 'm1',
+                title: 'Grundlagen',
+                lessons: [
+                  { id: 'l1', assetId: 'a3', lessonTitle: 'Knie Achsenkontrolle Basics', lessonDescription: 'Kontrollierter Kraftaufbau.', dosageToday: '2x 10 Wdh', cues: 'Knie über 2. Zehe führen.', optionalFlag: false },
+                ],
+              },
+            ],
+          },
+        },
+      ]
+
+      const MARKETING = [
+        { title: 'Instagram Story Set', format: '1080x1920', channel: 'Social' },
+        { title: 'Flyer A5 Physiotherapie', format: 'Print + PDF', channel: 'Praxis' },
+        { title: 'Newsletter Vorlage', format: 'E-Mail', channel: 'CRM' },
+      ]
+
+      function uid(prefix) {
+        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+      }
+
+      function createEmptyDraft() {
+        return {
+          courseTitle: 'Neuer Partnerkurs',
+          focus: '',
+          notes: '',
+          modules: [],
+        }
+      }
+
+      function HeaderActions() {
+        return (
+          <div className="flex flex-wrap gap-3">
+            <button className="rounded-lg bg-pomPink px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600">Template anfragen</button>
+            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Support kontaktieren</button>
+          </div>
+        )
+      }
+
+      function Card({ children, className = '' }) {
+        return <section className={`rounded-2xl bg-white p-5 shadow-card ${className}`}>{children}</section>
+      }
+
+      function LibraryOverview() {
+        const [query, setQuery] = useState('')
+        const [activeChip, setActiveChip] = useState('Alle')
+        const filtered = useMemo(() => COURSES.filter((c) => (activeChip === 'Alle' || c.category === activeChip) && c.title.toLowerCase().includes(query.toLowerCase())), [query, activeChip])
+
+        return (
+          <Card>
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <h3 className="text-lg font-semibold">Bibliothek</h3>
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Kurse suchen..." className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm md:max-w-xs" />
+            </div>
+            <div className="mb-5 flex flex-wrap gap-2">
+              {['Alle', ...FILTERS].map((chip) => (
+                <button key={chip} onClick={() => setActiveChip(chip)} className={`rounded-full px-3 py-1 text-sm ${activeChip === chip ? 'bg-pomGreen text-white' : 'bg-slate-100 text-slate-700'}`}>{chip}</button>
+              ))}
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {filtered.map((course) => (
+                <article key={course.title} className="rounded-xl border border-slate-100 p-4">
+                  <p className="text-xs font-semibold uppercase text-pomGreen">{course.category}</p>
+                  <h4 className="mt-1 font-semibold">{course.title}</h4>
+                  <p className="mt-1 text-sm text-slate-500">{course.level} · {course.sessions} Sessions</p>
+                </article>
+              ))}
+            </div>
+          </Card>
+        )
+      }
+
+      function ConfiguratorPage() {
+        const [libraryQuery, setLibraryQuery] = useState('')
+        const [libraryFilter, setLibraryFilter] = useState('Alle')
+        const [draft, setDraft] = useState(createEmptyDraft())
+        const [selectedLesson, setSelectedLesson] = useState({ moduleId: '', lessonId: '' })
+        const [status, setStatus] = useState('')
+
+        useEffect(() => {
+          const saved = localStorage.getItem(STORAGE_KEY)
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved)
+              setDraft(parsed)
+            } catch {
+              setStatus('Gespeicherter Entwurf konnte nicht geladen werden.')
+            }
+          }
+        }, [])
+
+        useEffect(() => {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(draft))
+        }, [draft])
+
+        const moduleCount = draft.modules.length
+        const lessonCount = draft.modules.reduce((acc, m) => acc + m.lessons.length, 0)
+
+        const filteredLibrary = useMemo(() => {
+          return MASTER_LIBRARY.filter((item) => {
+            const categoryMatch = libraryFilter === 'Alle' || item.category === libraryFilter
+            const text = `${item.title} ${item.tags.join(' ')} ${item.defaultDescription}`.toLowerCase()
+            return categoryMatch && text.includes(libraryQuery.toLowerCase())
+          })
+        }, [libraryFilter, libraryQuery])
+
+        const currentModule = draft.modules.find((m) => m.id === selectedLesson.moduleId)
+        const currentLesson = currentModule?.lessons.find((l) => l.id === selectedLesson.lessonId)
+
+        function saveNow() {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(draft))
+          setStatus('Entwurf gespeichert.')
+          setTimeout(() => setStatus(''), 1600)
+        }
+
+        function addModule() {
+          const newModule = { id: uid('m'), title: `Modul ${draft.modules.length + 1}`, lessons: [] }
+          setDraft({ ...draft, modules: [...draft.modules, newModule] })
+        }
+
+        function updateModule(moduleId, patch) {
+          setDraft({
+            ...draft,
+            modules: draft.modules.map((m) => (m.id === moduleId ? { ...m, ...patch } : m)),
+          })
+        }
+
+        function removeModule(moduleId) {
+          if (!confirm('Modul wirklich löschen?')) return
+          setDraft({ ...draft, modules: draft.modules.filter((m) => m.id !== moduleId) })
+          if (selectedLesson.moduleId === moduleId) setSelectedLesson({ moduleId: '', lessonId: '' })
+        }
+
+        function moveModule(moduleId, direction) {
+          const idx = draft.modules.findIndex((m) => m.id === moduleId)
+          const target = idx + direction
+          if (idx < 0 || target < 0 || target >= draft.modules.length) return
+          const modules = [...draft.modules]
+          ;[modules[idx], modules[target]] = [modules[target], modules[idx]]
+          setDraft({ ...draft, modules })
+        }
+
+        function addEmptyLesson(moduleId) {
+          const lesson = {
+            id: uid('l'),
+            assetId: '',
+            lessonTitle: 'Neue Lektion',
+            lessonDescription: '',
+            dosageToday: '',
+            cues: '',
+            optionalFlag: false,
+          }
+          setDraft({
+            ...draft,
+            modules: draft.modules.map((m) => (m.id === moduleId ? { ...m, lessons: [...m.lessons, lesson] } : m)),
+          })
+          setSelectedLesson({ moduleId, lessonId: lesson.id })
+        }
+
+        function addLessonFromAsset(moduleId, asset) {
+          const lesson = {
+            id: uid('l'),
+            assetId: asset.id,
+            lessonTitle: asset.title,
+            lessonDescription: asset.defaultDescription,
+            dosageToday: '',
+            cues: '',
+            optionalFlag: false,
+          }
+          setDraft({
+            ...draft,
+            modules: draft.modules.map((m) => (m.id === moduleId ? { ...m, lessons: [...m.lessons, lesson] } : m)),
+          })
+          setSelectedLesson({ moduleId, lessonId: lesson.id })
+        }
+
+        function updateLesson(moduleId, lessonId, patch) {
+          setDraft({
+            ...draft,
+            modules: draft.modules.map((m) =>
+              m.id !== moduleId
+                ? m
+                : {
+                    ...m,
+                    lessons: m.lessons.map((l) => (l.id === lessonId ? { ...l, ...patch } : l)),
+                  },
+            ),
+          })
+        }
+
+        function removeLesson(moduleId, lessonId) {
+          if (!confirm('Lektion wirklich löschen?')) return
+          setDraft({
+            ...draft,
+            modules: draft.modules.map((m) =>
+              m.id !== moduleId ? m : { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) },
+            ),
+          })
+          if (selectedLesson.lessonId === lessonId) setSelectedLesson({ moduleId: '', lessonId: '' })
+        }
+
+        function moveLesson(moduleId, lessonId, direction) {
+          const module = draft.modules.find((m) => m.id === moduleId)
+          if (!module) return
+          const idx = module.lessons.findIndex((l) => l.id === lessonId)
+          const target = idx + direction
+          if (idx < 0 || target < 0 || target >= module.lessons.length) return
+          const lessons = [...module.lessons]
+          ;[lessons[idx], lessons[target]] = [lessons[target], lessons[idx]]
+          updateModule(moduleId, { lessons })
+        }
+
+        function loadTemplate(template) {
+          if (!confirm('Aktuellen Entwurf durch Template ersetzen?')) return
+          const fresh = JSON.parse(JSON.stringify(template.draft))
+          fresh.modules = fresh.modules.map((m) => ({
+            ...m,
+            id: uid('m'),
+            lessons: m.lessons.map((l) => ({ ...l, id: uid('l') })),
+          }))
+          setDraft(fresh)
+          setSelectedLesson({ moduleId: '', lessonId: '' })
+          setStatus(`Template geladen: ${template.name}`)
+        }
+
+        function resetDraft() {
+          if (!confirm('Entwurf komplett zurücksetzen?')) return
+          const empty = createEmptyDraft()
+          setDraft(empty)
+          setSelectedLesson({ moduleId: '', lessonId: '' })
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(empty))
+          setStatus('Entwurf zurückgesetzt.')
+        }
+
+        function exportJson() {
+          const blob = new Blob([JSON.stringify(draft, null, 2)], { type: 'application/json' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `${(draft.courseTitle || 'kurs').replaceAll(' ', '_')}.json`
+          a.click()
+          URL.revokeObjectURL(url)
+        }
+
+        function buildSummaryText() {
+          let out = `Kurs: ${draft.courseTitle}\nFokus/Zielgruppe: ${draft.focus}\nNotizen: ${draft.notes}\n`
+          out += `\nModule: ${moduleCount}, Lektionen: ${lessonCount}\n\n`
+          draft.modules.forEach((m, idx) => {
+            out += `${idx + 1}. ${m.title}\n`
+            m.lessons.forEach((l, li) => {
+              out += `  ${idx + 1}.${li + 1} ${l.lessonTitle}\n`
+              if (l.lessonDescription) out += `    Beschreibung: ${l.lessonDescription}\n`
+              if (l.dosageToday) out += `    Dosierung: ${l.dosageToday}\n`
+              if (l.cues) out += `    Hinweise: ${l.cues}\n`
+              out += `    Optional: ${l.optionalFlag ? 'Ja' : 'Nein'}\n`
+            })
+            out += '\n'
+          })
+          return out
+        }
+
+        async function exportSummary() {
+          const text = buildSummaryText()
+          try {
+            await navigator.clipboard.writeText(text)
+            setStatus('Build Summary in die Zwischenablage kopiert.')
+          } catch {
+            const blob = new Blob([text], { type: 'text/plain' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `${(draft.courseTitle || 'kurs').replaceAll(' ', '_')}_summary.txt`
+            a.click()
+            URL.revokeObjectURL(url)
+            setStatus('Build Summary als TXT heruntergeladen.')
+          }
+        }
+
+        return (
+          <div className="grid gap-5 xl:grid-cols-12">
+            <Card className="xl:col-span-3">
+              <h3 className="text-lg font-semibold">Masterbibliothek</h3>
+              <p className="mt-1 text-sm text-slate-500">Assets als Quelle für Lektionen.</p>
+              <input value={libraryQuery} onChange={(e) => setLibraryQuery(e.target.value)} placeholder="Asset suchen..." className="mt-4 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+              <div className="mt-3 flex flex-wrap gap-2">
+                {['Alle', ...FILTERS].map((chip) => (
+                  <button key={chip} onClick={() => setLibraryFilter(chip)} className={`rounded-full px-3 py-1 text-xs ${libraryFilter === chip ? 'bg-pomGreen text-white' : 'bg-slate-100 text-slate-700'}`}>{chip}</button>
+                ))}
+              </div>
+
+              <h4 className="mt-6 text-sm font-semibold text-slate-700">Starter Templates</h4>
+              <div className="mt-2 space-y-2">
+                {TEMPLATES.map((tpl) => (
+                  <button key={tpl.id} onClick={() => loadTemplate(tpl)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm hover:bg-slate-50">
+                    {tpl.name}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {filteredLibrary.map((item) => (
+                  <div key={item.id} className="rounded-xl border border-slate-100 p-3">
+                    <p className="text-xs text-pomGreen">{item.category} · {item.type.toUpperCase()} {item.duration ? `· ${item.duration}` : ''}</p>
+                    <h5 className="text-sm font-semibold">{item.title}</h5>
+                    <p className="text-xs text-slate-500">{item.difficulty} · {item.tags.join(', ')}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {draft.modules.length === 0 ? (
+                        <span className="text-xs text-slate-400">Erst Modul anlegen</span>
+                      ) : (
+                        draft.modules.map((m) => (
+                          <button key={`${item.id}-${m.id}`} onClick={() => addLessonFromAsset(m.id, item)} className="rounded bg-slate-100 px-2 py-1 text-xs hover:bg-slate-200">
+                            + zu {m.title}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="xl:col-span-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-lg font-semibold">Course Builder</h3>
+                <p className="text-sm text-slate-500">{moduleCount} Module · {lessonCount} Lektionen</p>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                <input value={draft.courseTitle} onChange={(e) => setDraft({ ...draft, courseTitle: e.target.value })} placeholder="Kurstitel" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                <input value={draft.focus} onChange={(e) => setDraft({ ...draft, focus: e.target.value })} placeholder="Fokus / Zielgruppe" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                <textarea value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} rows="2" placeholder="Optionale Notizen" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button onClick={addModule} className="rounded-lg bg-pomGreen px-3 py-2 text-sm font-semibold text-white">Modul hinzufügen</button>
+                <button onClick={saveNow} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Speichern</button>
+                <button onClick={resetDraft} className="rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600">Reset</button>
+              </div>
+              {status ? <p className="mt-2 text-xs text-slate-500">{status}</p> : null}
+
+              <div className="mt-5 space-y-3">
+                {draft.modules.map((module, idx) => (
+                  <div key={module.id} className="rounded-xl border border-slate-100 p-3">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <input value={module.title} onChange={(e) => updateModule(module.id, { title: e.target.value })} className="flex-1 rounded border border-slate-200 px-2 py-1 text-sm" />
+                      <button onClick={() => moveModule(module.id, -1)} className="rounded border px-2 py-1 text-xs">↑</button>
+                      <button onClick={() => moveModule(module.id, 1)} className="rounded border px-2 py-1 text-xs">↓</button>
+                      <button onClick={() => addEmptyLesson(module.id)} className="rounded border px-2 py-1 text-xs">+ Lektion</button>
+                      <button onClick={() => removeModule(module.id)} className="rounded border border-red-300 px-2 py-1 text-xs text-red-600">Löschen</button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {module.lessons.map((lesson) => (
+                        <div key={lesson.id} className={`flex flex-wrap items-center gap-2 rounded-lg border p-2 ${selectedLesson.lessonId === lesson.id ? 'border-pomGreen bg-pomGreen/5' : 'border-slate-200'}`}>
+                          <button onClick={() => setSelectedLesson({ moduleId: module.id, lessonId: lesson.id })} className="text-left text-sm font-medium">{lesson.lessonTitle}</button>
+                          <span className="ml-auto text-xs text-slate-500">{lesson.optionalFlag ? 'Optional' : 'Pflicht'}</span>
+                          <button onClick={() => moveLesson(module.id, lesson.id, -1)} className="rounded border px-2 py-0.5 text-xs">↑</button>
+                          <button onClick={() => moveLesson(module.id, lesson.id, 1)} className="rounded border px-2 py-0.5 text-xs">↓</button>
+                          <button onClick={() => removeLesson(module.id, lesson.id)} className="rounded border border-red-300 px-2 py-0.5 text-xs text-red-600">x</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {draft.modules.length === 0 ? <p className="text-sm text-slate-400">Noch keine Module vorhanden. Starte mit „Modul hinzufügen“.</p> : null}
+              </div>
+            </Card>
+
+            <Card className="xl:col-span-4">
+              <h3 className="text-lg font-semibold">Lektions-Editor & Export</h3>
+              {!currentLesson ? (
+                <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
+                  Wähle eine Lektion im Builder aus, um Titel, Beschreibung, Dosierung und Hinweise zu bearbeiten.
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  <input value={currentLesson.lessonTitle} onChange={(e) => updateLesson(selectedLesson.moduleId, selectedLesson.lessonId, { lessonTitle: e.target.value })} placeholder="Lesson Title" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                  <textarea value={currentLesson.lessonDescription} onChange={(e) => updateLesson(selectedLesson.moduleId, selectedLesson.lessonId, { lessonDescription: e.target.value })} rows="3" placeholder="Lesson Description" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={currentLesson.dosageToday} onChange={(e) => updateLesson(selectedLesson.moduleId, selectedLesson.lessonId, { dosageToday: e.target.value })} placeholder='Dosierung heute, z. B. "1x 8-10 Wdh"' className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                  <textarea value={currentLesson.cues} onChange={(e) => updateLesson(selectedLesson.moduleId, selectedLesson.lessonId, { cues: e.target.value })} rows="3" placeholder="Cues / Hinweise" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={currentLesson.optionalFlag} onChange={(e) => updateLesson(selectedLesson.moduleId, selectedLesson.lessonId, { optionalFlag: e.target.checked })} />
+                    Optionale Lektion
+                  </label>
+                </div>
+              )}
+
+              <div className="mt-6 space-y-2">
+                <button onClick={exportJson} className="w-full rounded-lg bg-pomGreen px-3 py-2 text-sm font-semibold text-white">Export JSON</button>
+                <button onClick={exportSummary} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">Export Build Summary</button>
+              </div>
+            </Card>
+          </div>
+        )
+      }
+
+      function TemplatesPage() {
+        return (
+          <Card>
+            <h3 className="text-lg font-semibold">Templates</h3>
+            <p className="mt-1 text-sm text-slate-500">Vorgefertigte Kursstrukturen und Kommunikationsvorlagen.</p>
+          </Card>
+        )
+      }
+
+      function MarketingPage() {
+        return (
+          <Card>
+            <h3 className="text-lg font-semibold">Marketing-Material</h3>
+            <p className="mb-4 mt-1 text-sm text-slate-500">Assets für Website, Social Media und Praxis-Print.</p>
+            <div className="space-y-3">
+              {MARKETING.map((item) => (
+                <div key={item.title} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 p-3">
+                  <div>
+                    <p className="font-medium">{item.title}</p>
+                    <p className="text-xs text-slate-500">Kanal: {item.channel}</p>
+                  </div>
+                  <span className="text-sm text-slate-500">{item.format}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )
+      }
+
+      function CommissionsPage() {
+        return (
+          <Card>
+            <h3 className="text-lg font-semibold">Provisionen</h3>
+            <p className="mt-1 text-sm text-slate-500">UI-Platzhalter: Hier erscheinen später Partnerprovisionen, Auszahlungsstatus und Berichte.</p>
+            <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400">Provisionsmodul folgt in Phase 2</div>
+          </Card>
+        )
+      }
+
+      function SupportPage() {
+        return (
+          <Card>
+            <h3 className="text-lg font-semibold">Support</h3>
+            <p className="mt-1 text-sm text-slate-500">Direkter Draht zum Place of Motion Partner-Support Team.</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button className="rounded-lg bg-pomGreen px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600">Ticket erstellen</button>
+              <button className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Support kontaktieren</button>
+            </div>
+          </Card>
+        )
+      }
+
+      function HomePage() {
+        const metrics = [
+          { label: 'Aktive Patientenprogramme', value: '124' },
+          { label: 'Neue Kursfreigaben', value: '9' },
+          { label: 'Offene Support-Anfragen', value: '3' },
+        ]
+
+        return (
+          <div className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-3">
+              {metrics.map((m) => (
+                <Card key={m.label} className="p-4">
+                  <p className="text-sm text-slate-500">{m.label}</p>
+                  <p className="mt-2 text-2xl font-bold text-pomGreen">{m.value}</p>
+                </Card>
+              ))}
+            </div>
+            <LibraryOverview />
+          </div>
+        )
+      }
+
+      function App() {
+        const [active, setActive] = useState('Dashboard Home')
+
+        const pageMap = {
+          'Dashboard Home': <HomePage />,
+          Bibliothek: <LibraryOverview />,
+          'Kurs-Konfigurator': <ConfiguratorPage />,
+          Templates: <TemplatesPage />,
+          'Marketing-Material': <MarketingPage />,
+          Provisionen: <CommissionsPage />,
+          Support: <SupportPage />,
+        }
+
+        return (
+          <div className="min-h-screen bg-slate-50">
+            <div className="mx-auto flex max-w-7xl flex-col lg:flex-row">
+              <aside className="border-b border-slate-200 bg-white lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
+                <div className="p-6">
+                  <div className="rounded-xl bg-gradient-to-r from-pomGreen to-emerald-600 p-4 text-white">
+                    <p className="text-xs uppercase tracking-[0.2em] text-emerald-100">Place of Motion</p>
+                    <h1 className="mt-2 text-xl font-bold">Partner Hub</h1>
+                    <p className="mt-1 text-sm text-emerald-50">Physiotherapie Dashboard</p>
+                  </div>
+                  <nav className="mt-6 grid grid-cols-2 gap-2 lg:grid-cols-1">
+                    {NAV.map((item) => (
+                      <button key={item} onClick={() => setActive(item)} className={`rounded-lg px-3 py-2 text-left text-sm transition ${active === item ? 'bg-pomGreen/10 font-semibold text-pomGreen' : 'text-slate-600 hover:bg-slate-100'}`}>
+                        {item}
+                      </button>
+                    ))}
+                  </nav>
+                </div>
+              </aside>
+
+              <main className="flex-1 p-4 md:p-8">
+                <header className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Willkommen zurück, Praxis Team</p>
+                    <h2 className="text-2xl font-bold">{active}</h2>
+                  </div>
+                  <HeaderActions />
+                </header>
+                {pageMap[active]}
+              </main>
+            </div>
+          </div>
+        )
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+    </script>
+  </body>
+</html>
